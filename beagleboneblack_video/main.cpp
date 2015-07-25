@@ -18,7 +18,7 @@ int main( int argc, char **argv )
 	QApplication a( argc, argv );
 	
 	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 340, 290);
+	myWidget->setGeometry(400, 300, 340, 600);
 
 	//create an image placeholder for myLabel
 	//fill the top left corner with red, just bcuz
@@ -37,8 +37,15 @@ int main( int argc, char **argv )
 	myLabel.setPixmap(QPixmap::fromImage(myImage));
 
 	//create a FFC button
-	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
-	button1->setGeometry(320/2-50, 290-35, 100, 30);
+	char letters[] = "_abcdefghijklmnopqrstuvwxyz0123456789";
+	QPushButton* buttons[sizeof(letters) - 1];
+	for (int i = 0; i < sizeof(letters) - 1; i++) {
+		char name[2];
+		name[0] = letters[i];
+		name[1] = '\0';
+		buttons[i] = new QPushButton(name, myWidget);
+		buttons[i]->setGeometry((i % 8) * 40, 320 + (i / 8) * 40, 30, 30);
+	}
 
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
@@ -46,7 +53,9 @@ int main( int argc, char **argv )
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
 	//connect ffc button to the thread's ffc action
-	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
+	for (int i = 0; i < sizeof(letters) - 1; i++) {
+		QObject::connect(buttons[i], SIGNAL(clicked()), thread, SLOT(triggerSave()));
+	}
 	thread->start();
 	
 	myWidget->show();

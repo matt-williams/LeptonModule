@@ -1,4 +1,5 @@
 #include "LeptonThread.h"
+#include <QPushButton>
 
 #include "Palettes.h"
 #include "SPI.h"
@@ -15,6 +16,32 @@ LeptonThread::LeptonThread() : QThread()
 }
 
 LeptonThread::~LeptonThread() {
+}
+
+static unsigned int letter_counts[256] = {0, };
+void LeptonThread::save(char letter) {
+  char filename[20];
+  sprintf(filename, "%c.%.5u.ppm", letter, letter_counts[letter]++);
+  qDebug() << "Saving to " << filename;
+  QFile file(filename);
+  file.open(QIODevice::WriteOnly);
+  QTextStream out(&file);
+  out << "P3 80 60 65535\n";
+  uint16_t* frameBuffer = (uint16_t *)result;
+  for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+    if(i % PACKET_SIZE_UINT16 < 2) {
+      continue;
+    }
+    out << frameBuffer[i] << " " << frameBuffer[i] << " " << frameBuffer[i] << " ";
+    if (i % PACKET_SIZE_UINT16 == PACKET_SIZE_UINT16 - 1) {
+      out << "\n";
+    }
+  }
+  file.close();
+}
+
+void LeptonThread::triggerSave() {
+  _letter = ((QPushButton*)QObject::sender())->text().at(0).toAscii();
 }
 
 void LeptonThread::run()
@@ -77,6 +104,11 @@ void LeptonThread::run()
 			}
 			column = i % PACKET_SIZE_UINT16 - 2;
 			row = i / PACKET_SIZE_UINT16 ;
+		}
+
+                if (_letter != '\0') {
+			save(_letter);
+			_letter = '\0';
 		}
 
 		float diff = maxValue - minValue;

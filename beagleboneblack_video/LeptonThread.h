@@ -25,6 +25,7 @@ public:
   void run();
 
 public slots:
+  void triggerSave();
   void performFFC();
 
 signals:
@@ -32,12 +33,14 @@ signals:
   void updateImage(QImage);
 
 private:
+  void save(char letter);
 
   QImage myImage;
 
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;
 
+  char _letter;
 };
 
 #endif
