@@ -9,7 +9,6 @@
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
 #define PACKETS_PER_FRAME 60
 #define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
-#define FPS 27;
 
 LeptonThread::LeptonThread() : QThread()
 {
@@ -192,18 +191,18 @@ void LeptonThread::process() {
 	{
 		int i = 0;
 		predictions[i].letter = '_'; predictions[i++].data = data__;
-		predictions[i].letter = 'a'; predictions[i++].data = data_a;
-		predictions[i].letter = 'e'; predictions[i++].data = data_e;
+		predictions[i].letter = 'f'; predictions[i++].data = data_a;
+		predictions[i].letter = 'l'; predictions[i++].data = data_e;
 		predictions[i].letter = 'i'; predictions[i++].data = data_i;
-		predictions[i].letter = 'o'; predictions[i++].data = data_o;
-		predictions[i].letter = 'u'; predictions[i++].data = data_u;
+		predictions[i].letter = 'r'; predictions[i++].data = data_o;
+		predictions[i].letter = '!'; predictions[i++].data = data_u;
 	}
 	for (int y = 0; y < 60; y++) {
 		for (int x = 0; x < 80; x++) {
-			short v = buffer[x + y * 80] / 2 - data_base[x + y * 80] / 2;
+			short v = buffer[x + y * 80];// / 2 - data_base[x + y * 80] / 2;
 			for (int i = 0; i < NUM_PREDICTIONS; i++) {
-				predictions[i].accumulated += (((long long)v) - predictions[i].data[x + y * 80]) * (((long long)v) - predictions[i].data[x + y * 80]);
-				//predictions[i].accumulated += ((long long)v) * predictions[i].data[x + y * 80];
+				//predictions[i].accumulated += (((long long)v) - predictions[i].data[x + y * 80]) * (((long long)v) - predictions[i].data[x + y * 80]);
+				predictions[i].accumulated += ((long long)v) * predictions[i].data[x + y * 80];
 			}
 			buffer[x + y * 80] = v;
 		}
@@ -221,17 +220,17 @@ void LeptonThread::process() {
 			}
 */
 			float confidence = ((float)sorted_predictions[i].accumulated) / sorted_predictions[0].accumulated;
-			printf("%c %2.1f%% ", sorted_predictions[i].letter, confidence * 100);
+			fprintf(stderr, "%c %2.1f%% ", sorted_predictions[i].letter, confidence * 100);
 			if (i == 0) {
 				if (sorted_predictions[0].letter == last_prediction)
 				{
-//					printf("%c %d %f\n", last_prediction, num_prediction_ticks, ((float)sorted_predictions[1].accumulated) / sorted_predictions[0].accumulated);
-					if (((float)sorted_predictions[1].accumulated) / sorted_predictions[0].accumulated < 0.98) {
+//					if (((float)sorted_predictions[1].accumulated) / sorted_predictions[0].accumulated < 0.98) {
 						num_prediction_ticks++;
 						if ((num_prediction_ticks == 3) && (sorted_predictions[i].letter != '_')) {
 							printf("%c", sorted_predictions[i].letter);
+							fflush(stdout);
 						}
-					}
+//					}
 				}
 				else
 				{
@@ -241,7 +240,7 @@ void LeptonThread::process() {
 			}
 		}
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 /*
 	qDebug() << ((confidence > 15) ? guess : '?') << " (" << guess << " - " << confidence << ")% - " << a[0] << " " << a[1] << " " << a[2] << " " << a[3] << " " << a[4] << " " << a[5];
 	if (confidence > 15) {
